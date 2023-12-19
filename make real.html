@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Game Prototype</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    position: absolute;
+  }
+  #game-container {
+    position: relative;
+    width: 300px;
+    height: 600px;
+    margin: 50px auto;
+    border: 2px solid #333;
+    background-color: #f8fafc; /* Light theme background */
+  }
+  #start-button {
+    display: block;
+    width: 100px;
+    margin: 20px auto;
+    padding: 10px;
+    text-align: center;
+    background-color: #4F46E5;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  #score {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+</style>
+</head>
+<body class="bg-gray-50"> <!-- Light theme background -->
+<div id="score">Score: 0000000</div>
+<div id="game-container">
+  <!-- Puyos will be dynamically added here -->
+</div>
+<div id="start-button">Start</div>
+
+<script>
+  const gameContainer = document.getElementById('game-container');
+  const startButton = document.getElementById('start-button');
+  const scoreDisplay = document.getElementById('score');
+  let score = 0;
+  let posY = 0;
+  let angle = 0;
+  const gravity = 5;
+  const rotationStep = 90;
+  let gravityInterval;
+  let gameStarted = false;
+
+  function spawnNewPuyos() {
+    const circle1 = document.createElement('div');
+    circle1.className = 'circle';
+    circle1.style.backgroundColor = getRandomColor();
+
+    const circle2 = document.createElement('div');
+    circle2.className = 'circle';
+    circle2.style.backgroundColor = getRandomColor();
+    circle2.style.top = '50px';
+
+    gameContainer.appendChild(circle1);
+    gameContainer.appendChild(circle2);
+
+    posY = 0; // Reset position
+    angle = 0; // Reset rotation angle
+    clearInterval(gravityInterval);
+    gravityInterval = setInterval(() => moveDown(circle1, circle2), 200);
+  }
+
+  function moveDown(circle1, circle2) {
+    posY += gravity;
+    if (posY + 100 > gameContainer.offsetHeight || checkCollision(circle1, circle2)) {
+      posY = circle1.offsetTop;
+      score += 10;
+      scoreDisplay.textContent = `Score: ${score.toString().padStart(7, '0')}`;
+      spawnNewPuyos();
+    } else {
+      circle1.style.top = `${posY}px`;
+      circle2.style.top = `${posY + 50}px`;
+    }
+  }
+
+  function checkCollision(circle1, circle2) {
+    const circles = gameContainer.getElementsByClassName('circle');
+    for (let i = 0; i < circles.length - 2; i += 2) {
+      const bottomCircle = circles[i];
+      if (circle1.offsetTop + 100 >= bottomCircle.offsetTop &&
+          circle1.offsetLeft < bottomCircle.offsetLeft + 50 &&
+          circle1.offsetLeft + 50 > bottomCircle.offsetLeft) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function getRandomColor() {
+    const colors = ['#dae546', '#e54646', '#46e5da', '#4646e5', '#e546e5'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (!gameStarted) return;
+    const key = event.key;
+    const step = 50;
+    const circles = gameContainer.getElementsByClassName('circle');
+    const circle1 = circles[circles.length - 2];
+    const circle2 = circles[circles.length - 1];
+
+    switch (key) {
+      case 'a': // Move left
+        if (circle1.offsetLeft > 0) {
+          circle1.style.left = `${circle1.offsetLeft - step}px`;
+          circle2.style.left = `${circle2.offsetLeft - step}px`;
+        }
+        break;
+      case 'd': // Move right
+        if (circle1.offsetLeft < gameContainer.offsetWidth - 50) {
+          circle1.style.left = `${circle1.offsetLeft + step}px`;
+          circle2.style.left = `${circle2.offsetLeft + step}px`;
+        }
+        break;
+      case 'j': // Rotate right circle around the left circle
+        if (!(circle1.offsetLeft >= gameContainer.offsetWidth - 50 && angle % 360 === 180) && !(circle1.offsetLeft <= 0 && angle % 360 === 0)) {
+          angle += rotationStep;
+          circle2.style.transform = `rotate(${angle}deg)`;
+          circle2.style.transformOrigin = "25px -25px";
+        }
+        break;
+      case 'l': // Rotate left circle around the right circle
+        if (!(circle1.offsetLeft >= gameContainer.offsetWidth - 50 && angle % 360 === 0) && !(circle1.offsetLeft <= 0 && angle % 360 === -180)) {
+          angle -= rotationStep;
+          circle2.style.transform = `rotate(${angle}deg)`;
+          circle2.style.transformOrigin = "25px -25px";
+        }
+        break;
+    }
+  });
+
+  startButton.addEventListener('click', () => {
+    if (!gameStarted) {
+      gameStarted = true;
+      startButton.style.display = 'none';
+      spawnNewPuyos();
+    }
+  });
+</script>
+</body>
+</html>
